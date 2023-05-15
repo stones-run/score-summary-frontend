@@ -1,4 +1,5 @@
 # score-summary-frontend
+# 成绩汇总前端
 
 ## Project setup
 ```
@@ -22,4 +23,3 @@ npm run lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
-成绩汇总前端

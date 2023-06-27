@@ -3,16 +3,21 @@ import {createStore} from 'vuex'
 const store = createStore({
     state() {
         return {
-            scoreDataPath: localStorage.getItem("scoreDataPath")
+            exam: [],
+            isLogin: sessionStorage.getItem("isLogin")
         }
     },
     getters: {
-        scoreDataPath: state => state.scoreDataPath,
+        exam: state => state.exam,
+        isLogin: state => state.isLogin,
     },
     mutations: {
-        scoreDataPath(state, value) {
-            state.scoreDataPath = value
-            localStorage.setItem("scoreDataPath", value)
+        exam(state, value) {
+            state.exam = value
+        },
+        isLogin(state, value) {
+            state.isLogin = value
+            sessionStorage.setItem("isLogin", value)
         }
     }
 })

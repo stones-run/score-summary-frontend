@@ -1,84 +1,111 @@
 <template>
-  <a-button class="editable-add-btn" style="margin-bottom: 8px" @click="handleAdd" type="primary">增加考试</a-button>
-  <a-divider type="vertical"/>
+  <div v-show="!isLogin">
+    配置界面用于修改数据，为保安全，请登陆后进行操作
+  </div>
+  <div v-show="isLogin">
+    <a-modal v-model:visible="addExamVisible" :footer="null" title="又考试了" width="400px">
+      <a-form>
+        <a-form-item :label-col="{span:5}"
+                     label="叫啥来着：">
+          <a-input v-model:value="newExamName">
+          </a-input>
+        </a-form-item>
 
-
-  <a-button class="editable-add-btn" style="margin-bottom: 8px" @click="saveExam" type="primary">保存</a-button>
-  <a-table bordered :data-source="dataSource" :columns="columns" row-key="id">
-    <template #bodyCell="{ column, text, record }">
-      <template v-if="column.dataIndex === 'name'">
-        <div class="editable-cell">
-          <div v-if="editableData[record.id]" class="editable-cell-input-wrapper">
-            <a-input v-model:value="editableData[record.id].name" @pressEnter="save(record.id)"/>
-            <check-outlined class="editable-cell-icon-check" @click="save(record.id)"/>
+        <a-form-item :wrapper-col="{ span: 12, offset: 5 }">
+          <a-button html-type="submit" type="primary" @click="handleAdd">好吧</a-button>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+    <a-button class="editable-add-btn"
+              style="margin-bottom: 8px"
+              type="primary"
+              @click="addExamVisible=true">
+      增加考试
+    </a-button>
+    <!--    <a-button class="editable-add-btn" style="margin-bottom: 8px" type="primary" @click="handleAdd">增加考试</a-button>-->
+    <a-divider type="vertical"/>
+    <a-button :loading="isSaving" class="editable-add-btn" style="margin-bottom: 8px" type="primary" @click="saveExam">
+      保存
+    </a-button>
+    <a-table :columns="columns" :data-source="dataSource" bordered row-key="id">
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.dataIndex === 'name'">
+          <div class="editable-cell">
+            <div v-if="editableData[record.id]" class="editable-cell-input-wrapper">
+              <a-input v-model:value="editableData[record.id].name" @pressEnter="save(record.id)"/>
+              <check-outlined class="editable-cell-icon-check" @click="save(record.id)"/>
+            </div>
+            <div v-else class="editable-cell-text-wrapper">
+              {{ text || ' ' }}
+              <edit-outlined class="editable-cell-icon" @click="edit(record.id)"/>
+            </div>
           </div>
-          <div v-else class="editable-cell-text-wrapper">
-            {{ text || ' ' }}
-            <edit-outlined class="editable-cell-icon" @click="edit(record.id)"/>
-          </div>
-        </div>
+        </template>
+        <template v-else-if="column.dataIndex === 'sort'">
+          <a-button size="small" style="margin-right: 8px" @click="moveUp(record.id)">
+            <template #icon>
+              <up-outlined/>
+            </template>
+          </a-button>
+          <a-button size="small" @click="moveDown(record.id)">
+            <template #icon>
+              <down-outlined/>
+            </template>
+          </a-button>
+        </template>
+        <template v-else-if="column.dataIndex === 'operation'">
+          <a-popconfirm
+              v-if="dataSource.length"
+              title="删除考试将清空此次考试下上传的所有成绩数据，确定么？"
+              @confirm="onDelete(record.id)"
+          >
+            <a>删除</a>
+          </a-popconfirm>
+        </template>
       </template>
-      <template v-else-if="column.dataIndex === 'sort'">
-        <a-button size="small" style="marginRight: 8px" @click="moveUp(record.id)">
-          <template #icon>
-            <up-outlined/>
-          </template>
-        </a-button>
-        <a-button size="small" @click="moveDown(record.id)">
-          <template #icon>
-            <down-outlined/>
-          </template>
-        </a-button>
-      </template>
-      <template v-else-if="column.dataIndex === 'operation'">
-        <a-popconfirm
-            v-if="dataSource.length"
-            title="删除考试将清空此次考试下上传的所有成绩数据，确定么？"
-            @confirm="onDelete(record.id)"
-        >
-          <a>删除</a>
-        </a-popconfirm>
-      </template>
-    </template>
-    <template #expandedRowRender="{record}">
-      <a-table :columns="innerColumns" :data-source="record.data" :pagination="false" row-key="id">
-        <template #bodyCell="{ column,text,index }">
-          <template v-if="column.dataIndex === 'is_upload'">
+      <template #expandedRowRender="{record}">
+        <a-table :columns="innerColumns" :data-source="record.data" :pagination="false" row-key="id">
+          <template #bodyCell="{ column,text,index }">
+            <template v-if="column.dataIndex === 'is_upload'">
             <span v-if="text">
               <a-badge status="success"/>
               已上传
             </span>
-            <span v-else>
+              <span v-else>
               <a-badge status="default"/>
               未上传
             </span>
+            </template>
+            <template v-else-if="column.dataIndex === 'operation'">
+              <a-upload
+                  ref="uploadRef"
+                  :before-upload="beforeUpload"
+                  :headers="headers"
+                  :multiple="true"
+                  name="file"
+                  @change="(info) => handleChange(info, record.id, index)"
+              >
+                <a-button>
+                  <upload-outlined></upload-outlined>
+                  批量上传
+                </a-button>
+              </a-upload>
+            </template>
           </template>
-          <template v-else-if="column.dataIndex === 'operation'">
-            <a-upload
-                name="file"
-                ref="uploadRef"
-                :headers="headers"
-                :multiple="true"
-                :before-upload="beforeUpload"
-                @change="(info) => handleChange(info, record.id, index)"
-            >
-              <a-button>
-                <upload-outlined></upload-outlined>
-                批量上传
-              </a-button>
-            </a-upload>
-          </template>
-        </template>
-      </a-table>
-    </template>
-  </a-table>
+        </a-table>
+      </template>
+    </a-table>
+  </div>
+
 </template>
 
 <script>
 import {computed, defineComponent, reactive, ref} from 'vue';
-import {CheckOutlined, EditOutlined, UpOutlined, DownOutlined, UploadOutlined} from '@ant-design/icons-vue';
+import {CheckOutlined, DownOutlined, EditOutlined, UploadOutlined, UpOutlined} from '@ant-design/icons-vue';
 import {cloneDeep} from 'lodash-es';
 import {getExcelData} from "@/utils/scoreExcel";
+import {mapGetters} from "vuex";
+import {notification} from 'ant-design-vue';
 
 export default defineComponent({
   components: {
@@ -88,15 +115,30 @@ export default defineComponent({
     DownOutlined,
     UploadOutlined
   },
+  computed: {
+    ...mapGetters([
+      "isLogin"
+    ])
+  },
+
   data() {
     return {
       uploadData: [],
       uploadExcel: [],
-      updateExam: {}
+      updateExam: {},
+      addExamVisible: false,
+      newExamName: "",
+      isSaving: false,
+      dataError: false,
     }
   },
   created() {
     this.getExamData()
+  },
+  watch: {
+    dataSource() {
+      this.$store.commit("exam", this.dataSource)
+    }
   },
   methods: {
     getExamData() {
@@ -107,23 +149,29 @@ export default defineComponent({
         } else {
           this.$message.error(res.msg)
         }
-        console.log(res)
       })
     },
+
     onDelete(key) {
       this.$axios.delete("/api/exam/" + key).then(res => {
         res = res.data
         if (res.cd === 0) {
           this.dataSource = this.dataSource.filter((item) => item.id !== key);
         } else {
-          this.$message.error(res.data.msg)
+          this.$message.error(res.msg)
         }
-        console.log(res)
       })
     },
     handleAdd() {
+      if (!this.newExamName || this.newExamName.trim().length === 0) {
+        this.$message.info("请输入名称")
+        return
+      }
+      if (!this.dataSource) {
+        this.dataSource = []
+      }
       const newData = {
-        name: `第${this.dataSource.length + 1}次考试`,
+        name: this.newExamName,
         data: [
           {grade: 1, is_upload: false},
           {grade: 2, is_upload: false},
@@ -138,10 +186,10 @@ export default defineComponent({
         if (res.cd === 0) {
           res.data.data = newData.data
           this.dataSource.push(res.data)
+          this.addExamVisible = false
         } else {
           this.$message.error(res.msg)
         }
-        console.log(res)
       })
     },
     async readFiles() {
@@ -156,19 +204,38 @@ export default defineComponent({
               const reader = new FileReader();
               reader.onload = (e) => {
                 const result = e.target.result;
-                const excelData = getExcelData(result, examId, grade);
-                this.data.score = [...this.data.score, ...excelData];
+                console.log(file.name, 'file.name')
+                const fileName = file.name;
+                const match = fileName.match(/\d+/);
+                if (!match) {
+                  this.dataError = true
+                  this.openNotification(fileName, `EXCEL名称应为阿拉伯数字的班级名`)
+                } else {
+                  let class_ = parseInt(match[0])
+                  let cache_key = `${examId} + ${grade} + ${class_}`
+                  const excelData = getExcelData(result, examId, grade, class_, this.cacheData[cache_key], this.cacheName[cache_key]);
+                  if (typeof excelData === "string") {
+                    this.openNotification(fileName, excelData)
+                    this.dataError = true
+                    return
+                  }
+                  this.cacheData[cache_key] = excelData
+                  this.cacheName[cache_key] = fileName
+                  // this.data.score = [...this.data.score, ...excelData];
+                }
                 resolve();
               };
               reader.readAsArrayBuffer(file.originFileObj);
             });
             promises.push(promise);
           }
+
         }
       }
       await Promise.all(promises);
     },
     async saveExam() {
+      this.isSaving = true
       this.data = {
         exam: this.dataSource,
         score: [],
@@ -177,17 +244,30 @@ export default defineComponent({
           exam_id: []
         }
       }
+      this.cacheData = {}
+      this.cacheName = {}
+      this.dataError = false
       await this.readFiles();
+      if (this.dataError) {
+        return
+      }
+      this.data.score = Object.values(this.cacheData).flat()
       this.$axios.post("/api/score", this.data).then(res => {
-        console.log(res)
+        this.isSaving = false
+        if (res.data.cd === 0) {
+          this.$message.info("保存成功")
+          this.getExamData()
+        } else {
+          this.$message.error(res.data.msg)
+        }
       })
     },
     handleChange(info, examId, grade) {
+      grade += 1
       console.log("info.file.status", info, examId, grade)
-      console.log(info.fileList[0], info.file, info.file === info.fileList[0])
       let uploadExcel = this.uploadExcel.filter(data => data.grade === grade && data.examId === examId)
       if (uploadExcel && uploadExcel.length > 0) {
-        uploadExcel[0].fileList = [...uploadExcel[0].fileList, ...info.fileList]
+        uploadExcel[0].fileList = info.fileList
       } else {
         let data = {examId: examId, grade: grade, fileList: info.fileList}
         this.uploadExcel.push(data)
@@ -265,6 +345,19 @@ export default defineComponent({
       }
     };
     const fileList = ref([]);
+    const openNotification = (title, desc) => {
+      notification.error({
+        message: title,
+        description: desc,
+        duration: null,
+        style: {
+          width: '600px',
+          marginLeft: `${335 - 600}px`,
+          color: "red"
+        },
+      });
+    }
+
 
     return {
       fileList,
@@ -279,7 +372,8 @@ export default defineComponent({
       edit,
       save,
       moveUp,
-      moveDown
+      moveDown,
+      openNotification
     }
         ;
   },

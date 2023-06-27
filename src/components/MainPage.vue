@@ -1,10 +1,10 @@
 <template>
   <a-tabs v-if="auth" v-model:activeKey="activeKey">
     <a-tab-pane key="1" tab="成绩汇总">
-      <IndexPage :classes="gradeClasses" :score-data="gradeScore"/>
+      <IndexPage :classes="gradeClasses" :grade="currentGrade" :score-data="gradeScore"/>
     </a-tab-pane>
     <a-tab-pane key="2" force-render tab="优秀学生数量">
-      <ExcellentPage :score-data="gradeScore"></ExcellentPage>
+      <ExcellentPage :grade="currentGrade" :score-data="gradeScore"></ExcellentPage>
     </a-tab-pane>
     <a-tab-pane v-if="false" key="3" force-render tab="学生成绩趋势图">
       <TendencyPage :classes="gradeClasses" :score-data="gradeScore"/>
@@ -15,12 +15,21 @@
 
     <template #leftExtra>
       <!--      <a-button class="tabs-extra-demo-button" @click="loadExcel">导入成绩单</a-button>-->
-      <a-select v-model:value="currentScore" class="tabs-extra-demo-button">
-        <a-select-option v-for="(item, index) in scores" :key="index" :value="item">{{ item }}</a-select-option>
+      <a-select v-model:value="currentExam" class="tabs-extra-demo-button">
+        <a-select-option v-for="(item) in exam" :key="item.id" :value="item.id">{{ item.name }}</a-select-option>
       </a-select>
       <a-select v-model:value="currentGrade" class="tabs-extra-demo-button">
-        <a-select-option v-for="(item, index) in grades" :key="index" :value="item">{{ item }}</a-select-option>
+        <a-select-option v-for="(item) in grades" :key="item.grade" :value="item.grade">{{
+            item.name
+          }}
+        </a-select-option>
       </a-select>
+    </template>
+
+    <template #rightExtra>
+      <a download href="/四（1）班学生成绩册--模板.xlsx" style="margin-right: 20px">下载模板</a>
+      <LoginModal ref="login"/>
+      <a-button type="primary" @click="open">登录</a-button>
     </template>
   </a-tabs>
 </template>
@@ -30,8 +39,17 @@ import IndexPage from "@/components/IndexPage";
 import ExcellentPage from "@/components/ExcellentPage";
 import ConfigPage from "@/components/ConfigPage";
 import {mapGetters} from "vuex";
+import LoginModal from "@/components/LoginModal";
 import TendencyPage from "@/components/TendencyPage";
 
+const grades = [
+  {grade: 1, name: "一年级"},
+  {grade: 2, name: "二年级"},
+  {grade: 3, name: "三年级"},
+  {grade: 4, name: "四年级"},
+  {grade: 5, name: "五年级"},
+  {grade: 6, name: "六年级"},
+]
 export default {
   name: "MainPage",
   data() {
@@ -41,57 +59,36 @@ export default {
       gradeScore: [],
       classes: [],
       gradeClasses: [],
-      grades: [],
-      currentGrade: "",
-      currentScore: "",
+      grades: grades,
+      currentGrade: null,
+      currentExam: null,
       scorePath: "",
-      scores: [],
-      auth: true
+      auth: true,
+      visible: false
     }
   },
   computed: {
     ...mapGetters([
-      'scoreDataPath',
+      'exam',
     ]),
   },
   components: {
     IndexPage,
     ExcellentPage,
     ConfigPage,
-    TendencyPage
+    TendencyPage,
+    LoginModal
   },
   created() {
-    const options = {
-      method: 'GET',
-    };
-    fetch("http://47.111.64.228:8888/ss-auth", options)
-        .then((response) => {
-          if (!response.ok) {
-            this.auth = false
-          }
-          console.log("resp", response)
-          return response.json();
-        })
-        .then((json) => {
-          console.log("json", json, typeof json)
-          this.auth = json.auth
-        })
-        .catch((error) => {
-          this.auth = false
-          console.error("error", error)
-        });
-
-    console.log(this.$store, "scoreDataPath", this.$store.state)
-
-
   },
   watch: {
-    grades(data) {
-      this.currentGrade = data[0]
-      this.$forceUpdate()
-      console.log("grades", this.currentGrade)
+    exam() {
+      if (!this.exam || this.exam.length === 0 || !this.exam.find(i => i.id === this.currentExam)) {
+        this.currentExam = null
+      }
     },
     currentGrade(data) {
+      this.getScore()
       this.gradeScore = this.scoreData.filter(function (item) {
         return item.class.toString().includes(data);
       })
@@ -99,13 +96,33 @@ export default {
         return item.includes(data);
       })
     },
-    currentScore(value) {
-      console.log("currentScore", value)
-      this.$ipcRenderer.send("getExcelsData", {dir: value, rootPath: this.scorePath})
+    currentExam(value) {
+      this.getScore()
+      console.log("currentExam", value)
     }
   },
   methods: {
-
+    open() {
+      this.$refs.login.open()
+    },
+    handleOk(form) {
+      console.log("form", form)
+      // 登录请求
+      this.visible = false
+    },
+    getScore() {
+      if (!this.currentExam || !this.currentGrade) {
+        return
+      }
+      this.$axios.get("/api/score/" + this.currentExam + "/" + this.currentGrade).then(res => {
+        if (res.data.cd === 0) {
+          this.gradeScore = res.data.data
+        } else {
+          this.$message.error(res.data.msg)
+          this.gradeScore = []
+        }
+      })
+    },
   }
 }
 </script>
@@ -113,7 +130,7 @@ export default {
 <style scoped>
 .tabs-extra-demo-button {
   margin-right: 16px;
-  min-width: 100px;
+  min-width: 200px;
 }
 
 </style>

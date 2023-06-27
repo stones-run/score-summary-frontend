@@ -15,6 +15,9 @@
       <!--      <template #index="{ text, record, index }">-->
       <!--        <p style="color: red">{{ getRanking(index) }}</p>-->
       <!--      </template>-->
+      <template #class="{text}">
+        （{{ text }}）班
+      </template>
       <template #pagination="{ current, pageSize, total }">
         <a-pagination
             :current="current"
@@ -35,7 +38,7 @@ const columnsBase = [
   // },
   {
     title: '学号',
-    dataIndex: 'studentNum',
+    dataIndex: 'student_num',
     width: 80,
     align: 'center',
   },
@@ -46,11 +49,12 @@ const columnsBase = [
     filterMultiple: false,
     onFilter: (value, record) => record.class === value,
     width: 110,
-    align: 'center'
+    align: 'center',
+    slots: {customRender: 'class'}
   },
   {
     title: '姓名',
-    dataIndex: 'name',
+    dataIndex: 'student_name',
     align: 'center'
   },
   {
@@ -181,26 +185,15 @@ export default {
         return []
       }
     },
-    classes: {
-      type: Array,
-      default() {
-        return []
-      }
-    },
-    grades: {
-      type: Array,
-      default() {
-        return []
-      }
+
+    grade: {
+      type: Number,
     }
   },
   watch: {
-    classes(data) {
-      console.log("data", data)
-      this.columns[0].children[1].filters = data.map(item => {
-        return {text: item, value: item};
-      });
-      this.$forceUpdate()
+    scoreData(data) {
+      let classes = Array.from(new Set(data.map(item => item.class))).map(item => ({text: item, value: item}))
+      this.columns[0].children[1].filters = classes
     }
   },
   data() {

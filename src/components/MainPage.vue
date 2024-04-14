@@ -6,7 +6,7 @@
     <a-tab-pane key="2" force-render tab="优秀学生数量">
       <ExcellentPage :grade="currentGrade" :score-data="gradeScore"></ExcellentPage>
     </a-tab-pane>
-    <a-tab-pane v-if="false" key="3" force-render tab="学生成绩趋势图">
+    <a-tab-pane key="3" force-render tab="学生成绩趋势图">
       <TendencyPage :classes="gradeClasses" :score-data="gradeScore"/>
     </a-tab-pane>
     <a-tab-pane key="4" force-render tab="配置中心">
@@ -27,6 +27,7 @@
     </template>
 
     <template #rightExtra>
+      <a style="margin-right: 20px" @click="callMe">联系作者</a>
       <a download href="/四（1）班学生成绩册--模板.xlsx" style="margin-right: 20px">下载模板</a>
       <LoginModal ref="login"/>
       <a-button type="primary" @click="open">登录</a-button>
@@ -41,6 +42,7 @@ import ConfigPage from "@/components/ConfigPage";
 import {mapGetters} from "vuex";
 import LoginModal from "@/components/LoginModal";
 import TendencyPage from "@/components/TendencyPage";
+import {notification} from "ant-design-vue";
 
 const grades = [
   {grade: 1, name: "一年级"},
@@ -102,6 +104,20 @@ export default {
     }
   },
   methods: {
+
+    callMe() {
+      notification.open({
+        message: "联系方式",
+        description: "QQ：1057014556",
+        duration: null,
+        style: {
+          width: '600px',
+          marginLeft: `${335 - 600}px`,
+          color: "red"
+        },
+      });
+    },
+
     open() {
       this.$refs.login.open()
     },

@@ -119,11 +119,8 @@ export default defineComponent({
     }
   },
   methods: {
-
-
     onclickTendency(student) {
       console.log("onclickTendency", student)
-
     },
     handleOk() {
       this.visible = false
@@ -183,12 +180,11 @@ export default defineComponent({
     const columns = [
       {
         title: '学号',
-        dataIndex: 'studentNum',
-        width: 120,
+        dataIndex: 'student_num',
         align: 'center',
-        sorter: (a, b) => a.studentNum - b.studentNum,
+        sorter: (a, b) => a.student_name - b.student_name,
         customFilterDropdown: true,
-        onFilter: (value, record) => record.studentNum.toString().toLowerCase().includes(value.toLowerCase()),
+        onFilter: (value, record) => record.student_name.toString().toLowerCase().includes(value.toLowerCase()),
         onFilterDropdownVisibleChange: visible => {
           if (visible) {
             setTimeout(() => {
@@ -202,15 +198,14 @@ export default defineComponent({
         dataIndex: 'class',
         filters: [],
         filterMultiple: false,
-        width: 150,
         align: 'center'
       },
       {
         title: '姓名',
-        dataIndex: 'name',
+        dataIndex: 'student_name',
         align: 'center',
         customFilterDropdown: true,
-        onFilter: (value, record) => record.name && record.name.toString().toLowerCase().includes(value.toLowerCase()),
+        onFilter: (value, record) => record.student_name && record.student_name.toString().toLowerCase().includes(value.toLowerCase()),
         onFilterDropdownVisibleChange: visible => {
           if (visible) {
             setTimeout(() => {

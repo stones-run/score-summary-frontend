@@ -6,7 +6,7 @@
         :data-source="scoreData"
         :pagination="pagination"
         :row-class-name="(_record, index) => (index % 2 === 1 ? 'table-white' : 'table-striped')"
-        :scroll="{ y: 800 }"
+        :scroll="{ y: screen.height -330}"
         bordered
         class="ant-table-striped"
         size="small"
@@ -221,7 +221,11 @@ export default {
       ],
     }
   },
-  computed: {},
+  computed: {
+    screen() {
+      return window.screen
+    }
+  },
   methods: {
 
 

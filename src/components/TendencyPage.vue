@@ -2,8 +2,9 @@
   <a-table :columns="columns"
            :data-source="scoreData"
            :pagination="pagination"
-           :scroll="{ y: 800 }"
-           bordered size="small">
+           :scroll="{ y: screen.height -300}"
+           bordered
+           size="small">
     <!--eslint-disable-next-line vue/no-unused-vars-->
     <template #tendency="{ text, record }">
       <a-button type="link" @click="onclickTendency(record)">查看</a-button>
@@ -115,11 +116,13 @@ export default defineComponent({
       styleObj: {
         width: '100%',
         height: '400px'
-      }
+      },
+      screen: window.screen,
     }
   },
   methods: {
     onclickTendency(student) {
+      this.$message.info("开发中。。。")
       console.log("onclickTendency", student)
     },
     handleOk() {

@@ -76,8 +76,10 @@
 
 </template>
 <script>
+import * as echarts from 'echarts'
 import {SearchOutlined} from '@ant-design/icons-vue';
 import {defineComponent, reactive, ref, toRefs} from 'vue';
+import {markRaw} from "vue";
 
 
 export default defineComponent({
@@ -112,17 +114,31 @@ export default defineComponent({
       },
       visibleChart: false,
       visible: false,
-      chart: null,
+      dataChart: null,
       styleObj: {
         width: '100%',
-        height: '400px'
+        height: `${window.screen.height / 2}px`,
       },
-      screen: window.screen,
+      screen: window.screen
     }
+  },
+  created() {
+
   },
   methods: {
     onclickTendency(student) {
-      this.$message.info("开发中。。。")
+      this.visible = true
+      this.$nextTick(() => {
+        if (this.dataChart === null) {
+          console.log("12")
+          this.dataChart = markRaw(echarts.init(document.getElementById("chart")));
+          window.onresize = () => {
+            this.dataChart.resize()
+          }
+        }
+        this.drawChart()
+      })
+
       console.log("onclickTendency", student)
     },
     handleOk() {
@@ -131,37 +147,27 @@ export default defineComponent({
     handleCancel() {
       this.visible = false
     },
-    drawChart() {
-      console.log("student", 12)
-      this.chart.setOption({
-        title: {
-          text: '折线统计图'
-        },
-        tooltip: {
-          trigger: 'axis'
-        },
-        xAxis: {
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        },
-        yAxis: {
-          type: 'value'
-        },
-        series: [{
-          name: '邮件营销',
-          type: 'line',
-          stack: '总量',
-          data: [120, 132, 101, 134, 90, 230, 210]
-        }, {
-          name: '联盟广告',
-          type: 'line',
-          stack: '总量',
-          data: [220, 182, 191, 234, 290, 330, 310]
-        }]
-      })
-    },
     onTableChange(pagination, filters, sorter) {
       console.log("onTableChange", pagination, filters, sorter)
     },
+    drawChart() {
+      // 绘制图表
+      this.dataChart.setOption({
+        xAxis: {
+          data: ["4-3", "4-4", "4-5", "4-6", "4-7", "4-8", "4-9"]
+        },
+        yAxis: {},
+        series: [
+          {
+            name: "用户量",
+            type: "line",
+            data: [8, 15, 31, 13, 15, 22, 11]
+          }
+        ]
+      });
+
+
+    }
   },
   watch: {
     classes(data) {
@@ -233,6 +239,7 @@ export default defineComponent({
       clearFilters({confirm: true});
       state.searchText = '';
     };
+
 
     return {
       columns,
